@@ -1,3 +1,5 @@
+pub mod pdf;
+
 use yaml_rust::{Yaml, YamlLoader};
 use std::path::Path;
 const PARSEERROR: &'static str = "Error: Unexpected YAML structure.";
