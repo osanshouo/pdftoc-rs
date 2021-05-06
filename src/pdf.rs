@@ -1,16 +1,32 @@
 pub mod header;
-pub mod object;
 pub mod trailer;
+pub mod xref;
+pub mod catalog;
+pub mod object;
 pub mod dictionary;
 
-pub fn parse(buf: &[u8]) {
-    // ヘッダーの解析
-    let _pdf_version = dbg!(header::parse(buf));
+use object::ObjectRef;
+use xref::XrefEntry;
 
-    // フッターの解析
-    let (trailer, xref) = trailer::parse(buf);
-    dbg!(trailer);
-    dbg!(xref);
+pub fn parse(buf: &[u8]) {
+    // ヘッダーを解析し PDF バージョンを取得
+    let pdf_version = header::parse(buf);
+    eprintln!("{:?}", pdf_version);
+
+    // フッターを解析しトレイラーとクロスリファレンステーブルのオフセットを取得
+    let (trailer, xref_offset) = trailer::parse(buf);
+    
+    // クロスリファレンステーブルを取得
+    let xref_table = xref::parse(&buf[xref_offset..]);
+    
+    
+    // カタログを取得
+    let catalog = {
+        let catalog_ref: &ObjectRef = &trailer.root;
+        let xref: &XrefEntry = &xref_table[&catalog_ref.object_number];
+        catalog::parse(&buf[xref.offset..])
+    };
+    eprintln!("{:?}", &catalog);
 }
 
 pub(crate) fn search(buf: &[u8], pat: &[u8], start: usize) -> usize {
