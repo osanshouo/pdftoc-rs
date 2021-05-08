@@ -17,17 +17,18 @@ pub fn parse(buf: &[u8]) -> HashMap<usize, XrefEntry> {
     let obj_num_start: usize = String::from_utf8_lossy(&buf[start..sp1]).parse().unwrap();
     let obj_num_end: usize = String::from_utf8_lossy(&buf[sp2..end]).parse().unwrap();
 
-    let mut idx = end;
+    let mut idx = seek_until(buf, end, b'\n') + 1;
     let mut xref_table = HashMap::new();
 
     for obj_num in obj_num_start..obj_num_end {
-        idx = seek_until(buf, idx, b'\n') + 1;
         xref_table.insert(obj_num, XrefEntry {
             object_number: obj_num,
             offset: String::from_utf8_lossy(&buf[idx..idx+10]).parse().unwrap(),
             generation_number: String::from_utf8_lossy(&buf[idx+11..idx+16]).parse().unwrap(),
             in_use: buf[idx+17] == b'n',
         });
+
+        idx += 20;
     }
 
     xref_table
