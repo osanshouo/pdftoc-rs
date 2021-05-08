@@ -2,6 +2,7 @@ pub mod header;
 pub mod trailer;
 pub mod xref;
 pub mod catalog;
+pub mod outline;
 pub mod object;
 pub mod dictionary;
 
@@ -27,6 +28,14 @@ pub fn parse(buf: &[u8]) {
         catalog::parse(&buf[xref.offset..])
     };
     eprintln!("{:?}", &catalog);
+
+    if let Some(outlines) = catalog.outlines {
+        eprintln!("Note: Input PDF already have ToC. PDFToC replace it in output PDF.");
+
+        let xref = &xref_table[&outlines.object_number];
+        let outlines = outline::parse(&buf[xref.offset..]);
+        eprintln!("{:?}", outlines);
+    }
 }
 
 pub(crate) fn search(buf: &[u8], pat: &[u8], start: usize) -> usize {
@@ -49,8 +58,8 @@ mod tests {
         let buf = std::fs::read("./experiment/HelloWorld.pdf").unwrap();
         parse(&buf);
 
-        let buf = std::fs::read("./experiment/HelloWorld.toc.pdf").unwrap();
-        parse(&buf);
+        // let buf = std::fs::read("./experiment/HelloWorld.toc.pdf").unwrap();
+        // parse(&buf);
 
         let buf = std::fs::read("./experiment/Weinberg - The Quantum Theory of Fields - Volume 3 Supersymmetry.toc.pdf").unwrap();
         parse(&buf);
